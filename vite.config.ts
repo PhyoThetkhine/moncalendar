@@ -1,3 +1,4 @@
+import { VitePWA } from 'vite-plugin-pwa';
 import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -203,7 +204,37 @@ function vitePluginStorageProxy(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
+const plugins = [
+  VitePWA({
+    registerType: 'autoUpdate',
+    includeAssets: ['image/image.png'],
+    manifest: {
+      name: 'Mon Calendar',
+      short_name: 'Mon Calendar',
+      description: 'A modern Mon Calendar',
+      theme_color: '#ffffff',
+      background_color: '#ffffff',
+      display: 'standalone',
+      icons: [
+        {
+          src: '/image/image.png',
+          sizes: '192x192',
+          type: 'image/png'
+        },
+        {
+          src: '/image/image.png',
+          sizes: '512x512',
+          type: 'image/png'
+        },
+        {
+          src: '/image/image.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any maskable'
+        }
+      ]
+    }
+  }),react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
 
 export default defineConfig({
   plugins,
