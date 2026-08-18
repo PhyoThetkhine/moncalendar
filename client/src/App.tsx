@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import InstallPrompt from "./components/InstallPrompt";
 
 /** Editorial Ledger design: app shell stays paper-white and lets the calendar remain the visual anchor. */
 
@@ -31,6 +32,7 @@ function App() {
         defaultTheme="light"
         // switchable
       >
+        <InstallPrompt />
         <TooltipProvider>
           <Toaster />
           <Router />
