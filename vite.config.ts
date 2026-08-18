@@ -207,7 +207,7 @@ function vitePluginStorageProxy(): Plugin {
 const plugins = [
   VitePWA({
     registerType: 'autoUpdate',
-    includeAssets: ['image/image.png'],
+    includeAssets: ['icon-192.png', 'icon-512.png'],
     manifest: {
       name: 'Mon Calendar',
       short_name: 'Mon Calendar',
@@ -217,17 +217,17 @@ const plugins = [
       display: 'standalone',
       icons: [
         {
-          src: '/image/image.png',
+          src: '/icon-192.png',
           sizes: '192x192',
           type: 'image/png'
         },
         {
-          src: '/image/image.png',
+          src: '/icon-512.png',
           sizes: '512x512',
           type: 'image/png'
         },
         {
-          src: '/image/image.png',
+          src: '/icon-512.png',
           sizes: '512x512',
           type: 'image/png',
           purpose: 'any maskable'
