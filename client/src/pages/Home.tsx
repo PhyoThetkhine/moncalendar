@@ -82,7 +82,7 @@ export default function Home() {
           <img src="/image/image.png" alt="" />
           <span>ကြက္ကဒိန်မန်</span>
         </a>
-        {/* <div className="header-center"><div className="header-date"><CalendarDays size={16} /> <span>{formatMonGregorianDate(today)}</span></div><Link className="about-link" href="/about">About</Link></div> */}
+
         <button className="today-button" onClick={returnToToday}><RotateCcw size={14} /><span>{formatMonGregorianDate(today)}</span></button>
       </header>
 
