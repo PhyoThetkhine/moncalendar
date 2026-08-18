@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Moon, RotateCcw } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 
 const monWeekdayLabels = ["အဒိုတ်", "စန်", "အင္ၚာ", "ဗုဒ္ဓဝါ", "ဗြဴဗတိ", "သိုက်", "သ္ၚိသဝ်"];
@@ -50,6 +50,22 @@ function phaseGlyph(phase: string) {
 export default function Home() {
   const [view, setView] = useState<MonthView>({ year: today.getFullYear(), month: today.getMonth() });
   const [selectedDate, setSelectedDate] = useState(today);
+  const [yearInput, setYearInput] = useState(() => toMonNumerals(today.getFullYear()));
+
+  useEffect(() => {
+    setYearInput(toMonNumerals(view.year));
+  }, [view.year]);
+
+  const handleYearSubmit = () => {
+    const parsedStr = String(yearInput).replace(/[\u1040-\u1049]/g, (match) => String(match.charCodeAt(0) - 0x1040));
+    let parsedYear = parseInt(parsedStr, 10);
+    if (!isNaN(parsedYear) && parsedYear > 1000 && parsedYear < 3000) {
+      setView((prev) => ({ ...prev, year: parsedYear }));
+      setYearInput(toMonNumerals(parsedYear));
+    } else {
+      setYearInput(toMonNumerals(view.year));
+    }
+  };
   const selectedMyanmar = useMemo(() => getMyanmarDate(selectedDate), [selectedDate]);
   const selectedEvents = useMemo(() => getMonCulturalEvents(selectedDate, selectedMyanmar), [selectedDate, selectedMyanmar]);
   const selectedStatuses = useMemo(() => getMonDailyStatuses(selectedDate, selectedMyanmar), [selectedDate, selectedMyanmar]);
@@ -103,16 +119,18 @@ export default function Home() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={String(view.year)} onValueChange={(val) => setView({ ...view, year: Number(val) })}>
-              <SelectTrigger className="month-select-trigger year-select-trigger" aria-label="သၞာံ">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {yearOptions.map((year) => (
-                  <SelectItem value={String(year)} key={year}>{toMonNumerals(year)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <input 
+              type="text" 
+              className="month-select-trigger year-select-trigger" 
+              aria-label="Year"
+              value={yearInput}
+              onChange={(e) => setYearInput(e.target.value)}
+              onBlur={handleYearSubmit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur();
+              }}
+              style={{ width: '78px', paddingRight: '4px', textAlign: 'center' }}
+            />
             <div className="month-arrows" aria-label="ဂိတုပလေဝ်">
               <button aria-label="ဂိတုပြင်" onClick={() => changeMonth(-1)}><ChevronLeft size={18} /></button>
               <button aria-label="ဂိတုဂတ" onClick={() => changeMonth(1)}><ChevronRight size={18} /></button>
