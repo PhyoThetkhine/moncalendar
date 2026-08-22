@@ -285,6 +285,125 @@ export function getMonCulturalEvents(date: Date, value: MyanmarDate) {
   return monCulturalEventRules.filter((event) => event.matches(date, value)).map((event) => event.name);
 }
 
+/**
+ * Mon holidays ported from cal_holiday() and cal_holiday2() in ceMmDateTime.js
+ * (https://conkyi.github.io/moncalendar/), using that source's official
+ * Mon translations (ITVilla / Mikau Nyan).
+ */
+const THINGYAN_SOLAR_YEAR = 1577917828.0 / 4320000.0; // Mean solar year (365.2587565)
+const THINGYAN_ME_ORIGIN = 1954168.050623; // Beginning of 0 ME
+const THINGYAN_BEGIN_YEAR = 1100; // Start of Thingyan era
+const THIRD_ERA = 1312;
+const OFFICE_HOLIDAY = "တ္ၚဲမာတ်ရုင်";
+
+function gregorianJDN(date: Date) {
+  return westernToJdn(date.getFullYear(), date.getMonth() + 1, date.getDate());
+}
+
+function thingyanBounds(totalYear: number) {
+  const atatTime = THINGYAN_SOLAR_YEAR * totalYear + THINGYAN_ME_ORIGIN; // Atat time
+  const akyaTime = totalYear >= THIRD_ERA ? atatTime - 2.169918982 : atatTime - 2.1675; // Akya time
+  return { akya: Math.round(akyaTime), atat: Math.round(atatTime) };
+}
+
+/** Date of Easter using the "Meeus/Jones/Butcher" algorithm, as JDN. */
+function easterJDN(year: number) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const q = h + l - 7 * m + 114;
+  const n = Math.floor(q / 31);
+  return westernToJdn(year, n, (q % 31) + 1);
+}
+
+const isFullMoon = (value: MyanmarDate) => value.phase === "Full moon";
+
+export function getMonHolidays(date: Date, value: MyanmarDate): string[] {
+  const labels: string[] = [];
+  const jdn = gregorianJDN(date);
+  const gy = date.getFullYear();
+  const gm = date.getMonth() + 1;
+  const gd = date.getDate();
+  const my = value.year;
+  const mm = value.monthNumber;
+  const md = value.day;
+
+  // Thingyan (တ္ၚဲအတး) and Myanmar New Year
+  if ((my + Math.floor(mm / 13)) >= THINGYAN_BEGIN_YEAR) {
+    const { akya, atat } = thingyanBounds(my + Math.floor(mm / 13));
+    if (jdn === atat + 1) labels.push("တ္ၚဲလှာဲသၞာံ");
+    else if (jdn === atat) labels.push("တ္ၚဲအတး တိုန်");
+    else if (jdn > akya && jdn < atat) labels.push("တ္ၚဲအတး ကြာပ်");
+    else if (jdn === akya) labels.push("တ္ၚဲအတး စှေ်");
+    else if (jdn === akya - 1) labels.push("တ္ၚဲအတး ဒစး");
+    if (
+      (my + Math.floor(mm / 13)) >= 1369 &&
+      (my + Math.floor(mm / 13)) < 1379 &&
+      (jdn === akya - 2 || (jdn >= atat + 2 && jdn <= akya + 7))
+    )
+      labels.push(OFFICE_HOLIDAY);
+  }
+
+  // Fixed Gregorian public holidays
+  if (gm === 1 && gd === 1) labels.push("တ္ၚဲလှာဲသၞာံ");
+  else if (gy >= 1948 && gm === 1 && gd === 4) labels.push("တ္ၚဲသၠးပွး");
+  else if (gy >= 1947 && gm === 2 && gd === 12) labels.push("တ္ၚဲကၟိန်ဍုၚ်");
+  else if (gy >= 1958 && gm === 3 && gd === 2) labels.push("တ္ၚဲသၟာဗ္ၚ");
+  else if (gy >= 1945 && gm === 3 && gd === 27) labels.push("တ္ၚဲပၠန်ဂတးဗၟာ");
+  else if (gy >= 1923 && gm === 5 && gd === 1) labels.push("တ္ၚဲသၟာကမၠောန်");
+  else if (gy >= 1947 && gm === 7 && gd === 19) labels.push("တ္ၚဲအာဇာနဲ");
+  else if (gy >= 1752 && gm === 12 && gd === 25) labels.push("တ္ၚဲခရေဿမာတ်");
+  else if ((gy === 2017 && gm === 12 && gd === 30) || (gy >= 2017 && gm === 12 && gd === 31)) labels.push(OFFICE_HOLIDAY);
+
+  if (gy >= 1915 && gm === 2 && gd === 13) labels.push("တ္ၚဲသၟိၚ်ဗၟာ အံၚ်သာန်ဒှ်မၞိဟ်");
+  if (gy >= 1969 && gm === 2 && gd === 14) labels.push("တ္ၚဲဝုတ်ဗၠာဲ");
+  if (gy >= 1392 && gm === 4 && gd === 1) labels.push("တ္ၚဲသ္ပပရအ်");
+  if (gy >= 1970 && gm === 4 && gd === 22) labels.push("တ္ၚဲဂၠးကဝ်");
+  if (gy >= 1948 && gm === 5 && gd === 8) labels.push("တ္ၚဲဇိုၚ်ခ္ဍာ်ဍာဲ");
+  if (gy >= 1994 && gm === 10 && gd === 5) labels.push("တ္ၚဲကမ္ဘာ့အစာဂမၠိုင်");
+  if (gy >= 1947 && gm === 10 && gd === 24) labels.push("တ္ၚဲကုလသမ္မဂ္ဂ");
+  if (gy >= 1753 && gm === 10 && gd === 31) labels.push("တ္ၚဲဟေဝ်လဝ်ဝိန်");
+
+  const doe = easterJDN(gy);
+  if (gy >= 1876 && jdn === doe) labels.push("တ္ၚဲထမြောက်ရာနေ့");
+  else if (gy >= 1876 && jdn === doe - 2) labels.push("တ္ၚဲသ္ၚိသဝ်ဇၞော်");
+
+  // Holidays on the Myanmar calendar (mp===1 → full moon)
+  if (mm === 2 && isFullMoon(value)) labels.push("တ္ၚဲသ္ဘၚ်ဖဍာ်ဇြဲ"); // Vesak
+  else if (mm === 4 && isFullMoon(value)) labels.push("တ္ၚဲတွံဓဝ်ဓမ္မစက်"); // Start of Buddhist Lent
+  else if (mm === 7 && isFullMoon(value)) labels.push("တ္ၚဲအဘိဓရ်"); // End of Buddhist Lent
+  else if (my >= 1379 && mm === 7 && (md === 14 || md === 16)) labels.push(OFFICE_HOLIDAY);
+  else if (mm === 8 && isFullMoon(value)) labels.push("တ္ၚဲသ္ဘၚ်ပူဇဴပၟတ်ပၞာၚ်"); // Tazaungdaing
+  else if (my >= 1379 && mm === 8 && md === 14) labels.push(OFFICE_HOLIDAY);
+  else if (my >= 1282 && mm === 8 && md === 25) labels.push("တ္ၚဲကောန်ဂကူ"); // National Day
+  else if (mm === 10 && md === 1) labels.push("တ္ၚဲကရေၚ်လှာဲသၞာံ"); // Karen New Year
+  else if (mm === 12 && isFullMoon(value)) labels.push("သ္ဘၚ်ဖဝ်ရဂိုန်"); // Tabaung Pwe
+
+  // Other observances on the Myanmar calendar
+  if (mm === 9 && md === 1) {
+    labels.push("တ္ၚဲသေံလှာဲသၞာံ"); // Shan New Year
+    if (my >= 1306) labels.push("တ္ၚဲပြိုင်လိခ်"); // Authors' Day
+  }
+  if (mm === 3 && isFullMoon(value)) labels.push("တ္ၚဲမဟာသမယ");
+  else if (mm === 6 && isFullMoon(value)) labels.push("တ္ၚဲဂရုဓမ္မ");
+  else if (my >= 1356 && mm === 10 && isFullMoon(value)) labels.push("တ္ၚဲမိအံက်");
+  else if (my >= 1370 && mm === 12 && isFullMoon(value)) labels.push("တ္ၚဲမအံက်");
+  else if (mm === 5 && isFullMoon(value)) labels.push("တ္ၚဲမေတ္တာ");
+  else if (mm === 5 && md === 10) labels.push("သ္ဘၚ်တောၚ်ပြုန်း");
+  else if (mm === 5 && md === 23) labels.push("သ္ဘၚ်ရတနာဂူ");
+
+  return labels;
+}
+
 const monStatusLabels = {
   sabbathEve: "တ္ၚဲတိၚ်",
   sabbath: "တ္ၚဲသဳ",

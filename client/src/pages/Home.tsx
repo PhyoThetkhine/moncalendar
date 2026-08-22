@@ -8,6 +8,7 @@ import {
   getMonCulturalEvents,
   getMonDailyStatuses,
   getMonGregorianMonth,
+  getMonHolidays,
   getMonMonth,
   getMonPhase,
   getMonWeekday,
@@ -68,6 +69,7 @@ export default function Home() {
   };
   const selectedMyanmar = useMemo(() => getMyanmarDate(selectedDate), [selectedDate]);
   const selectedEvents = useMemo(() => getMonCulturalEvents(selectedDate, selectedMyanmar), [selectedDate, selectedMyanmar]);
+  const selectedHolidays = useMemo(() => getMonHolidays(selectedDate, selectedMyanmar), [selectedDate, selectedMyanmar]);
   const selectedStatuses = useMemo(() => getMonDailyStatuses(selectedDate, selectedMyanmar), [selectedDate, selectedMyanmar]);
   const yearOptions = useMemo(() => Array.from({ length: 17 }, (_, index) => today.getFullYear() - 8 + index), []);
   const calendarCells = useMemo(() => {
@@ -146,6 +148,7 @@ export default function Home() {
                 if (!date) return <div key={`empty-${index}`} className="day-cell day-cell--empty" aria-hidden="true" />;
                 const myanmar = getMyanmarDate(date);
                 const events = getMonCulturalEvents(date, myanmar);
+                const holidays = getMonHolidays(date, myanmar);
                 const dailyStatuses = getMonDailyStatuses(date, myanmar);
                 const selected = sameDate(date, selectedDate);
                 const isToday = sameDate(date, today);
@@ -154,14 +157,15 @@ export default function Home() {
                   <button
                     role="gridcell"
                     key={date.toISOString()}
-                    className={`day-cell${selected ? " is-selected" : ""}${isToday ? " is-today" : ""}${weekend ? " is-weekend" : ""}${events.length ? " has-event" : ""}`}
+                    className={`day-cell${selected ? " is-selected" : ""}${isToday ? " is-today" : ""}${weekend ? " is-weekend" : ""}${events.length || holidays.length ? " has-event" : ""}`}
                     onClick={() => setSelectedDate(date)}
                     aria-label={`${formatMonGregorianDate(date)}၊ ${formatMonDate(myanmar)}`}
                   >
                     <span className="day-cell__number">{toMonNumerals(date.getDate())}</span>
                     <span className="day-cell__lunar">{getMonPhase(myanmar)}{myanmar.phase === "Waxing" || myanmar.phase === "Waning" ? ` ${toMonNumerals(myanmar.fortnightDay)}` : ""}</span>
                     {myanmar.phase !== "Waxing" && <span className="day-cell__moon" aria-hidden="true">{phaseGlyph(myanmar.phase)}</span>}
-                    {events.length > 0 && <span className="event-dot" aria-label={events[0]} />}
+                    {holidays.length > 0 && <span className="holiday-dot" aria-label={holidays[0]} />}
+                    {!(holidays.length > 0) && events.length > 0 && <span className="event-dot" aria-label={events[0]} />}
                     {dailyStatuses.length > 0 && <span className="status-mark" aria-label={dailyStatuses.join(" · ")} />}
                   </button>
                 );
@@ -179,6 +183,7 @@ export default function Home() {
               <div><dt>တ္ၚဲ</dt><dd>{getMonPhase(selectedMyanmar)} {selectedMyanmar.phase === "Waxing" || selectedMyanmar.phase === "Waning" ? toMonNumerals(selectedMyanmar.fortnightDay) : ""}</dd></div>
             </dl>
 
+            {selectedHolidays.length > 0 && <div className="selected-holiday"><span className="holiday-dot" /><strong>{selectedHolidays.join(" · ")}</strong></div>}
             {selectedEvents.length > 0 && <div className="selected-event"><span className="event-dot" /><strong>{selectedEvents.join(" · ")}</strong></div>}
             <div className="status-ledger">
               {/* <span className="section-kicker">တ္ၚဲလက္ခဏာ</span> */}
@@ -190,10 +195,12 @@ export default function Home() {
           </aside>
         </section>
       </main>
-      <footer className="app-footer">
+      <footer className="app-footer" style={{ borderTop: 'none' }}>
         <div className="footer-brand"><img src="/image/image.png" alt="" /><span>ကြက္ကဒိန်မန်</span></div>
         <span className="footer-purpose">MON CALENDAR · 2026</span>
-        <Link className="footer-credit" href="/about">PROVIDE BY PHYO THET KHINE</Link>
+        <a className="footer-credit" href="https://phyothetkhine.dpdns.org" target="_blank" rel="noopener noreferrer">
+          PROVIDE BY <span style={{ color: '#0066ff', fontWeight: 'bold' }}>PHYO THET KHINE</span>
+        </a>
       </footer>
     </div>
   );
