@@ -14,7 +14,10 @@ import {
   getMonWeekday,
   getMyanmarDate,
   toMonNumerals,
+  weekdayGridLabels,
+  type CalendarLang,
 } from "@/lib/myanmarCalendar";
+import { uiText } from "@/lib/uiText";
 import {
   Select,
   SelectContent,
@@ -24,10 +27,7 @@ import {
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Moon, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "wouter";
 
-const monWeekdayLabels = ["အဒိုတ်", "စန်", "အင္ၚာ", "ဗုဒ္ဓဝါ", "ဗြဴဗတိ", "သိုက်", "သ္ၚိသဝ်"];
-const monWeekdayTitles = ["တ္ၚဲအဒိုတ်", "တ္ၚဲစန်", "တ္ၚဲအင္ၚာ", "တ္ၚဲဗုဒ္ဓဝါ", "တ္ၚဲဗြဴဗတိ", "တ္ၚဲသိုက်", "တ္ၚဲသ္ၚိသဝ်"];
 const today = new Date();
 today.setHours(12, 0, 0, 0);
 
@@ -49,9 +49,17 @@ function phaseGlyph(phase: string) {
 }
 
 export default function Home() {
+  const [lang, setLang] = useState<CalendarLang>(() => (localStorage.getItem("calendar-lang") === "my" ? "my" : "mon"));
   const [view, setView] = useState<MonthView>({ year: today.getFullYear(), month: today.getMonth() });
   const [selectedDate, setSelectedDate] = useState(today);
   const [yearInput, setYearInput] = useState(() => toMonNumerals(today.getFullYear()));
+  const t = uiText[lang];
+
+  useEffect(() => {
+    localStorage.setItem("calendar-lang", lang);
+    document.title = t.appName;
+    document.documentElement.lang = t.htmlLang;
+  }, [lang, t]);
 
   useEffect(() => {
     setYearInput(toMonNumerals(view.year));
@@ -68,9 +76,10 @@ export default function Home() {
     }
   };
   const selectedMyanmar = useMemo(() => getMyanmarDate(selectedDate), [selectedDate]);
-  const selectedEvents = useMemo(() => getMonCulturalEvents(selectedDate, selectedMyanmar), [selectedDate, selectedMyanmar]);
-  const selectedHolidays = useMemo(() => getMonHolidays(selectedDate, selectedMyanmar), [selectedDate, selectedMyanmar]);
-  const selectedStatuses = useMemo(() => getMonDailyStatuses(selectedDate, selectedMyanmar), [selectedDate, selectedMyanmar]);
+  const selectedEvents = useMemo(() => getMonCulturalEvents(selectedDate, selectedMyanmar, lang), [selectedDate, selectedMyanmar, lang]);
+  const selectedHolidays = useMemo(() => getMonHolidays(selectedDate, selectedMyanmar, lang), [selectedDate, selectedMyanmar, lang]);
+  const selectedStatuses = useMemo(() => getMonDailyStatuses(selectedDate, selectedMyanmar, lang), [selectedDate, selectedMyanmar, lang]);
+  const weekdayTitles = useMemo(() => Array.from({ length: 7 }, (_, index) => getMonWeekday(new Date(2024, 8, 1 + index), lang)), [lang]);
   const yearOptions = useMemo(() => Array.from({ length: 17 }, (_, index) => today.getFullYear() - 8 + index), []);
   const calendarCells = useMemo(() => {
     const startOffset = makeDate(view.year, view.month, 1).getDay();
@@ -96,28 +105,34 @@ export default function Home() {
   return (
     <div className="simple-calendar-app">
       <header className="app-header">
-        <a className="app-brand" href="#calendar" aria-label="ကြက္ကဒိန်မန်">
+        <a className="app-brand" href="#calendar" aria-label={t.appName}>
           <img src="/image/image.png" alt="" />
-          <span>ကြက္ကဒိန်မန်</span>
+          <span>{t.appName}</span>
         </a>
 
-        <button className="today-button" onClick={returnToToday}><RotateCcw size={14} /><span>{formatMonGregorianDate(today)}</span></button>
+        <div className="header-actions">
+          <div className="lang-toggle" role="group" aria-label={t.languageGroupAria}>
+            <button className={lang === "mon" ? "active" : ""} onClick={() => setLang("mon")}>မန်</button>
+            <button className={lang === "my" ? "active" : ""} onClick={() => setLang("my")}>မြန်မာ</button>
+          </div>
+          <button className="today-button" onClick={returnToToday}><RotateCcw size={14} /><span>{formatMonGregorianDate(today, lang)}</span></button>
+        </div>
       </header>
 
       <main className="calendar-page" id="calendar">
         <section className="calendar-topbar" aria-labelledby="calendar-heading">
           <div>
-            <p className="section-kicker">သက္ကရာဇ်ဍုၚ်</p>
-            <h1 id="calendar-heading">{getMonGregorianMonth(view.month)} <span>{toMonNumerals(view.year)}</span></h1>
+            <p className="section-kicker">{t.eraKicker}</p>
+            <h1 id="calendar-heading">{getMonGregorianMonth(view.month, lang)} <span>{toMonNumerals(view.year)}</span></h1>
           </div>
           <div className="month-controls">
             <Select value={String(view.month)} onValueChange={(val) => setView({ ...view, month: Number(val) })}>
-              <SelectTrigger className="month-select-trigger" aria-label="ဂိတု">
+              <SelectTrigger className="month-select-trigger" aria-label={t.monthAria}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {Array.from({ length: 12 }, (_, index) => (
-                  <SelectItem value={String(index)} key={index}>{getMonGregorianMonth(index)}</SelectItem>
+                  <SelectItem value={String(index)} key={index}>{getMonGregorianMonth(index, lang)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -133,23 +148,23 @@ export default function Home() {
               }}
               style={{ width: '78px', paddingRight: '4px', textAlign: 'center' }}
             />
-            <div className="month-arrows" aria-label="ဂိတုပလေဝ်">
-              <button aria-label="ဂိတုပြင်" onClick={() => changeMonth(-1)}><ChevronLeft size={18} /></button>
-              <button aria-label="ဂိတုဂတ" onClick={() => changeMonth(1)}><ChevronRight size={18} /></button>
+            <div className="month-arrows" aria-label={t.monthAria}>
+              <button aria-label={t.prevMonthAria} onClick={() => changeMonth(-1)}><ChevronLeft size={18} /></button>
+              <button aria-label={t.nextMonthAria} onClick={() => changeMonth(1)}><ChevronRight size={18} /></button>
             </div>
           </div>
         </section>
 
         <section className="calendar-layout">
           <div className="calendar-panel">
-            <div className="week-grid" role="grid" aria-label={`${getMonGregorianMonth(view.month)} ${toMonNumerals(view.year)}`}>
-              {monWeekdayLabels.map((weekday, index) => <div className="weekday-label" role="columnheader" title={monWeekdayTitles[index]} key={weekday}>{weekday}</div>)}
+            <div className="week-grid" role="grid" aria-label={`${getMonGregorianMonth(view.month, lang)} ${toMonNumerals(view.year)}`}>
+              {weekdayGridLabels[lang].map((weekday, index) => <div className="weekday-label" role="columnheader" title={weekdayTitles[index]} key={weekday}>{weekday}</div>)}
               {calendarCells.map((date, index) => {
                 if (!date) return <div key={`empty-${index}`} className="day-cell day-cell--empty" aria-hidden="true" />;
                 const myanmar = getMyanmarDate(date);
-                const events = getMonCulturalEvents(date, myanmar);
-                const holidays = getMonHolidays(date, myanmar);
-                const dailyStatuses = getMonDailyStatuses(date, myanmar);
+                const events = getMonCulturalEvents(date, myanmar, lang);
+                const holidays = getMonHolidays(date, myanmar, lang);
+                const dailyStatuses = getMonDailyStatuses(date, myanmar, lang);
                 const selected = sameDate(date, selectedDate);
                 const isToday = sameDate(date, today);
                 const weekend = date.getDay() === 0 || date.getDay() === 6;
@@ -159,10 +174,10 @@ export default function Home() {
                     key={date.toISOString()}
                     className={`day-cell${selected ? " is-selected" : ""}${isToday ? " is-today" : ""}${weekend ? " is-weekend" : ""}${events.length || holidays.length ? " has-event" : ""}`}
                     onClick={() => setSelectedDate(date)}
-                    aria-label={`${formatMonGregorianDate(date)}၊ ${formatMonDate(myanmar)}`}
+                    aria-label={`${formatMonGregorianDate(date, lang)}၊ ${formatMonDate(myanmar, lang)}`}
                   >
                     <span className="day-cell__number">{toMonNumerals(date.getDate())}</span>
-                    <span className="day-cell__lunar">{getMonPhase(myanmar)}{myanmar.phase === "Waxing" || myanmar.phase === "Waning" ? ` ${toMonNumerals(myanmar.fortnightDay)}` : ""}</span>
+                    <span className="day-cell__lunar">{getMonPhase(myanmar, lang)}{myanmar.phase === "Waxing" || myanmar.phase === "Waning" ? ` ${toMonNumerals(myanmar.fortnightDay)}` : ""}</span>
                     {myanmar.phase !== "Waxing" && <span className="day-cell__moon" aria-hidden="true">{phaseGlyph(myanmar.phase)}</span>}
                     {holidays.length > 0 && <span className="holiday-dot" aria-label={holidays[0]} />}
                     {!(holidays.length > 0) && events.length > 0 && <span className="event-dot" aria-label={events[0]} />}
@@ -174,13 +189,13 @@ export default function Home() {
           </div>
 
           <aside className="selected-panel" aria-labelledby="selected-heading">
-            <div className="selected-panel__date"><span>{getMonWeekday(selectedDate)}</span><strong>{formatMonGregorianDate(selectedDate)}</strong></div>
+            <div className="selected-panel__date"><span>{getMonWeekday(selectedDate, lang)}</span><strong>{formatMonGregorianDate(selectedDate, lang)}</strong></div>
             <div className="selected-number">{toMonNumerals(selectedDate.getDate())}</div>
             <dl className="selected-facts">
-              <div><dt>သက္ကရာဇ်ဍုၚ်</dt><dd>{toMonNumerals(selectedMyanmar.year)} သၞာံ</dd></div>
-              <div><dt>သက္ကရာဇ် သာသနာ</dt><dd>{toMonNumerals(selectedMyanmar.year + 1182)} သၞာံ</dd></div>
-              <div><dt>ဂိတု</dt><dd>{getMonMonth(selectedMyanmar)}</dd></div>
-              <div><dt>တ္ၚဲ</dt><dd>{getMonPhase(selectedMyanmar)} {selectedMyanmar.phase === "Waxing" || selectedMyanmar.phase === "Waning" ? toMonNumerals(selectedMyanmar.fortnightDay) : ""}</dd></div>
+              <div><dt>{t.eraKicker}</dt><dd>{toMonNumerals(selectedMyanmar.year)} {t.yearUnit}</dd></div>
+              <div><dt>{t.sasanaLabel}</dt><dd>{toMonNumerals(selectedMyanmar.year + 1182)} {t.yearUnit}</dd></div>
+              <div><dt>{t.monthLabel}</dt><dd>{getMonMonth(selectedMyanmar, lang)}</dd></div>
+              <div><dt>{t.dayLabel}</dt><dd>{getMonPhase(selectedMyanmar, lang)} {selectedMyanmar.phase === "Waxing" || selectedMyanmar.phase === "Waning" ? toMonNumerals(selectedMyanmar.fortnightDay) : ""}</dd></div>
             </dl>
 
             {selectedHolidays.length > 0 && <div className="selected-holiday"><span className="holiday-dot" /><strong>{selectedHolidays.join(" · ")}</strong></div>}
@@ -191,7 +206,7 @@ export default function Home() {
                 <div className="status-list">{selectedStatuses.map((status) => <span key={status}>{status}</span>)}</div>
               ) : <span className="status-empty">—</span>}
             </div>
-            <div className="selected-footer"><Moon size={16} /> <span>{getMonPhase(selectedMyanmar)}</span></div>
+            <div className="selected-footer"><Moon size={16} /> <span>{getMonPhase(selectedMyanmar, lang)}</span></div>
           </aside>
         </section>
       </main>

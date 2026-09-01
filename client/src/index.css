@@ -21,6 +21,11 @@ img { display: block; max-width: 100%; }
 .today-button { justify-self: end; border: 0; background: transparent; display: inline-flex; align-items: center; gap: 7px; padding: 8px 0; color: var(--muted); font-size: 10px; transition: color 150ms var(--ease-out), transform 150ms var(--ease-out); }
 .today-button:hover { border-color: var(--ink); background: var(--soft); }
 .today-button:active { transform: scale(.98); }
+.header-actions { justify-self: end; display: inline-flex; align-items: center; gap: 16px; }
+.lang-toggle { display: inline-flex; border: 1px solid var(--line); }
+.lang-toggle button { border: 0; background: transparent; color: var(--muted); font-size: 10px; font-weight: 600; padding: 7px 12px; transition: color 150ms var(--ease-out), background 150ms var(--ease-out); }
+.lang-toggle button:hover { color: var(--ink); }
+.lang-toggle button.active { background: var(--ink); color: #fff; }
 
 .calendar-page { width: min(1320px, 100%); margin: 0 auto; padding: clamp(30px, 6vw, 64px) clamp(18px, 4vw, 42px) 34px; }
 .calendar-topbar { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 24px; }

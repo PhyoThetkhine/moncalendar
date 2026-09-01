@@ -7,7 +7,7 @@ A modern, installable Progressive Web App that displays the traditional **Mon / 
 - **Bilingual day views** – Gregorian dates paired with Myanmar calendar dates (year, month, fortnight day)
 - **Moon phase indicators** – Waxing ◐, Full moon ●, Waning ◑, New moon ○
 - **Sabbath tracking** – flags Sabbath and Sabbath eve days
-- **Holiday catalog** – Thingyan (တ္ၚဲအတး), Myanmar New Year, public holidays, and full-moon festivals with official Mon names, ported from [conkyi/moncalendar](https://conkyi.github.io/moncalendar/) (`ceMmDateTime.js`)
+- **Holiday catalog** – Thingyan (တ္ၚဲအတး), Myanmar New Year, public holidays, full-moon festivals, and Mon commemorations (Mon Revolution Day on the Wagaung full moon, Mon State Day, Mon National & Youth Days) in both Mon and Myanmar, ported from [conkyi/moncalendar](https://conkyi.github.io/moncalendar/) (`ceMmDateTime.js`)
 - **Mon cultural events & daily statuses** per date
 - **Mon language UI** – Mon weekday names and Mon numerals throughout
 - **Month navigation** – prev/next arrows, month picker, and direct year entry
