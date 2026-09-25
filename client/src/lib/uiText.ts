@@ -11,6 +11,13 @@ export type UiText = {
   nextMonthAria: string;
   monthAria: string;
   languageGroupAria: string;
+  publicHolidayLabel: string;
+  monCulturalLabel: string;
+  religiousLabel: string;
+  observanceLabel: string;
+  officialSourceLabel: string;
+  calculatedSourceLabel: string;
+  calendarLegendAria: string;
   htmlLang: string;
 };
 
@@ -27,6 +34,13 @@ export const uiText: Record<CalendarLang, UiText> = {
     nextMonthAria: "ဂိတုဂတ",
     monthAria: "ဂိတု",
     languageGroupAria: "Language",
+    publicHolidayLabel: "တ္ၚဲကၟာတ်ရုၚ်",
+    monCulturalLabel: "အခိုက်ကၞာမန်",
+    religiousLabel: "သ္ဘၚ်အခိုက်ကၞာ",
+    observanceLabel: "တ္ၚဲတၟေၚ်",
+    officialSourceLabel: "စရၚ်သ္ပဒတန်",
+    calculatedSourceLabel: "တော်ဆဂၠာဲလဝ်",
+    calendarLegendAria: "တဆိပ်ဒဒှ်တ္ၚဲ",
     htmlLang: "mnw",
   },
   my: {
@@ -40,6 +54,13 @@ export const uiText: Record<CalendarLang, UiText> = {
     nextMonthAria: "နောက်လ",
     monthAria: "လ",
     languageGroupAria: "Language",
+    publicHolidayLabel: "အများပြည်သူ ရုံးပိတ်ရက်",
+    monCulturalLabel: "မွန်ယဉ်ကျေးမှုနေ့",
+    religiousLabel: "ဘာသာရေးနှင့် ပွဲတော်",
+    observanceLabel: "အထိမ်းအမှတ်နေ့",
+    officialSourceLabel: "တရားဝင်စာရင်း",
+    calculatedSourceLabel: "ပြက္ခဒိန်တွက်ချက်မှု",
+    calendarLegendAria: "ပြက္ခဒိန် အမှတ်အသားများ",
     htmlLang: "my",
   },
 };

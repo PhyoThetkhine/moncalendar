@@ -8,6 +8,8 @@ A modern, installable Progressive Web App that displays the traditional **Mon / 
 - **Moon phase indicators** – Waxing ◐, Full moon ●, Waning ◑, New moon ○
 - **Sabbath tracking** – flags Sabbath and Sabbath eve days
 - **Holiday catalog** – Thingyan (တ္ၚဲအတး), Myanmar New Year, public holidays, full-moon festivals, and Mon commemorations (Mon Revolution Day on the Wagaung full moon, Mon State Day, Mon National & Youth Days) in both Mon and Myanmar, ported from [conkyi/moncalendar](https://conkyi.github.io/moncalendar/) (`ceMmDateTime.js`)
+- **Verified 2026–2027 closures** – date-specific public-holiday data sourced from Myanmar government and official mission listings, kept distinct from calculated religious and cultural observances
+- **Clear event provenance** – public holidays, Mon cultural dates, religious festivals, and general observances use separate markers and identify whether a date is officially listed or calculated
 - **Mon cultural events & daily statuses** per date
 - **Mon language UI** – Mon weekday names and Mon numerals throughout
 - **Month navigation** – prev/next arrows, month picker, and direct year entry
@@ -16,15 +18,15 @@ A modern, installable Progressive Web App that displays the traditional **Mon / 
 
 ## Tech Stack
 
-| Layer      | Technology                                        |
-| ---------- | ------------------------------------------------- |
-| Frontend   | React 19, TypeScript, Vite 7                      |
-| Styling    | Tailwind CSS 4, shadcn/ui (Radix primitives)      |
-| Routing    | [wouter](https://github.com/molefrog/wouter)      |
-| Animation  | framer-motion                                     |
-| PWA        | vite-plugin-pwa                                   |
-| Production | Express static server                             |
-| Tooling    | pnpm, esbuild, Prettier, tsc                      |
+| Layer      | Technology                                   |
+| ---------- | -------------------------------------------- |
+| Frontend   | React 19, TypeScript, Vite 7                 |
+| Styling    | Tailwind CSS 4, shadcn/ui (Radix primitives) |
+| Routing    | [wouter](https://github.com/molefrog/wouter) |
+| Animation  | framer-motion                                |
+| PWA        | vite-plugin-pwa                              |
+| Production | Express static server                        |
+| Tooling    | pnpm, esbuild, Prettier, tsc                 |
 
 ## Getting Started
 
@@ -51,6 +53,12 @@ Starts the Vite dev server on `http://localhost:3000` (exposed on your network v
 
 ```bash
 pnpm check
+```
+
+### Calendar Regression Tests
+
+```bash
+pnpm test:calendar
 ```
 
 ### Format
@@ -121,6 +129,10 @@ The conversion logic in [`client/src/lib/myanmarCalendar.ts`](client/src/lib/mya
 - Month index and name (including First Waso, Late Tagu, Late Kason)
 - Fortnight day and moon phase
 - Sabbath status
+
+The calculation is regression-tested against canonical `mmcal` vectors. Public-holiday closures are maintained separately because government announcements can change independently of the lunisolar calendar. The 2026 list uses the Myanmar Ministry of Foreign Affairs, the Myanmar National Portal / Ministry of Information, and official mission holiday notices. The Kason full moon is stored as **30 April 2026**, corroborated by the Ministry of Information's dated 1388 ME record; this avoids reproducing a conflicting 30 May entry on one summary page.
+
+The 2027 list follows the Union Government announcement and the official Myanmar Embassy schedules published in August 2026. It includes the four announced bridge holidays and the nine-day Thingyan closure. Eid-ul-Adha and Deepavali remain deliberately undated until the government publishes their exact dates.
 
 ## License
 

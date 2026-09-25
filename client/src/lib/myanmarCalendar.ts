@@ -8,6 +8,18 @@ export type MoonPhase = "Waxing" | "Full moon" | "Waning" | "New moon";
 /** UI language: Mon is the primary language, Myanmar (Burmese) the secondary. */
 export type CalendarLang = "mon" | "my";
 
+export type CalendarEventKind =
+  "public-holiday" | "mon-cultural" | "religious" | "observance";
+export type CalendarEventSource =
+  "official-2026" | "official-2027" | "calculated";
+
+export type CalendarEvent = {
+  id: string;
+  label: string;
+  kind: CalendarEventKind;
+  source: CalendarEventSource;
+};
+
 export type MyanmarDate = {
   yearType: number;
   year: number;
@@ -93,25 +105,59 @@ function yearConstants(my: number) {
     era = 2;
     watatOffset = -1;
     numberOfMonths = 4;
-    fullMoonExceptions = [[1234, 1], [1261, -1]];
+    fullMoonExceptions = [
+      [1234, 1],
+      [1261, -1],
+    ];
     watatExceptions = [1263, 1264];
   } else if (my >= 1100) {
     era = 1.3;
     watatOffset = -0.85;
     numberOfMonths = -1;
-    fullMoonExceptions = [[1120, 1], [1126, -1], [1150, 1], [1172, -1], [1207, 1]];
+    fullMoonExceptions = [
+      [1120, 1],
+      [1126, -1],
+      [1150, 1],
+      [1172, -1],
+      [1207, 1],
+    ];
     watatExceptions = [1201, 1202];
   } else if (my >= 798) {
     era = 1.2;
     watatOffset = -1.1;
     numberOfMonths = -1;
-    fullMoonExceptions = [[813, -1], [849, -1], [851, -1], [854, -1], [927, -1], [933, -1], [936, -1], [938, -1], [949, -1], [952, -1], [963, -1], [968, -1], [1039, -1]];
+    fullMoonExceptions = [
+      [813, -1],
+      [849, -1],
+      [851, -1],
+      [854, -1],
+      [927, -1],
+      [933, -1],
+      [936, -1],
+      [938, -1],
+      [949, -1],
+      [952, -1],
+      [963, -1],
+      [968, -1],
+      [1039, -1],
+    ];
     watatExceptions = [];
   } else {
     era = 1.1;
     watatOffset = -1.1;
     numberOfMonths = -1;
-    fullMoonExceptions = [[205, 1], [246, 1], [471, 1], [572, -1], [651, 1], [653, 2], [656, 1], [672, 1], [729, 1], [767, -1]];
+    fullMoonExceptions = [
+      [205, 1],
+      [246, 1],
+      [471, 1],
+      [572, -1],
+      [651, 1],
+      [653, 2],
+      [656, 1],
+      [672, 1],
+      [729, 1],
+      [767, -1],
+    ];
     watatExceptions = [];
   }
 
@@ -131,15 +177,26 @@ function calcWatat(my: number) {
   const lunarMonth = 1577917828 / 53433336;
   const epoch = 1954168.050623;
   const constants = yearConstants(my);
-  const threshold = (solarYear / 12 - lunarMonth) * (12 - constants.numberOfMonths);
+  const threshold =
+    (solarYear / 12 - lunarMonth) * (12 - constants.numberOfMonths);
   let excessDays = (solarYear * (my + 3739)) % lunarMonth;
   if (excessDays < threshold) excessDays += lunarMonth;
-  const fullMoon = Math.round(solarYear * my + epoch - excessDays + 4.5 * lunarMonth + constants.watatOffset);
+  const fullMoon = Math.round(
+    solarYear * my +
+      epoch -
+      excessDays +
+      4.5 * lunarMonth +
+      constants.watatOffset
+  );
   let watat = 0;
   if (constants.era >= 2) {
-    if (excessDays >= lunarMonth - (solarYear / 12 - lunarMonth) * constants.numberOfMonths) watat = 1;
+    if (
+      excessDays >=
+      lunarMonth - (solarYear / 12 - lunarMonth) * constants.numberOfMonths
+    )
+      watat = 1;
   } else {
-    watat = Math.floor((((my * 7 + 2) % 19 + 19) % 19) / 12);
+    watat = Math.floor(((((my * 7 + 2) % 19) + 19) % 19) / 12);
   }
   return { fullMoon, watat: watat ^ constants.watatException };
 }
@@ -161,11 +218,19 @@ function calcMyanmarYear(my: number) {
   } else {
     fullMoon = prior.fullMoon + 354 * (yearsBack + 1);
   }
-  return { yearType, firstTagu: prior.fullMoon + 354 * (yearsBack + 1) - 102, fullMoon };
+  return {
+    yearType,
+    firstTagu: prior.fullMoon + 354 * (yearsBack + 1) - 102,
+    fullMoon,
+  };
 }
 
 export function getMyanmarDate(date: Date): MyanmarDate {
-  const jdn = westernToJdn(date.getFullYear(), date.getMonth() + 1, date.getDate());
+  const jdn = westernToJdn(
+    date.getFullYear(),
+    date.getMonth() + 1,
+    date.getDate()
+  );
   const solarYear = 1577917828 / 4320000;
   const epoch = 1954168.050623;
   const my = Math.floor((jdn - 0.5 - epoch) / solarYear);
@@ -177,13 +242,24 @@ export function getMyanmarDate(date: Date): MyanmarDate {
   const lateMonth = Math.floor((dayCount - 1) / yearLength);
   dayCount -= lateMonth * yearLength;
   const adjustment = Math.floor((dayCount + 423) / 512);
-  let month = Math.floor((dayCount - bigWatat * adjustment + commonYear * adjustment * 30 + 29.26) / 29.544);
+  let month = Math.floor(
+    (dayCount - bigWatat * adjustment + commonYear * adjustment * 30 + 29.26) /
+      29.544
+  );
   const shiftA = Math.floor((month + 12) / 16);
   const shiftB = Math.floor((month + 11) / 16);
-  const day = dayCount - Math.floor(29.544 * month - 29.26) - bigWatat * shiftA + commonYear * shiftB * 30;
+  const day =
+    dayCount -
+    Math.floor(29.544 * month - 29.26) -
+    bigWatat * shiftA +
+    commonYear * shiftB * 30;
   month += shiftB * 3 - shiftA * 4 + 12 * lateMonth;
-  const monthLength = 30 - (month % 2) + (month === 3 ? Math.floor(yearInfo.yearType / 2) : 0);
-  const phaseIndex = Math.floor((day + 1) / 16) + Math.floor(day / 16) + Math.floor(day / monthLength);
+  const monthLength =
+    30 - (month % 2) + (month === 3 ? Math.floor(yearInfo.yearType / 2) : 0);
+  const phaseIndex =
+    Math.floor((day + 1) / 16) +
+    Math.floor(day / 16) +
+    Math.floor(day / monthLength);
   const phase: MoonPhase[] = ["Waxing", "Full moon", "Waning", "New moon"];
   const fortnightDay = day - 15 * Math.floor(day / 16);
   const sabbathDays = [8, 15, 23, monthLength];
@@ -197,12 +273,19 @@ export function getMyanmarDate(date: Date): MyanmarDate {
     day,
     phase: phase[phaseIndex],
     fortnightDay,
-    sabbath: sabbathDays.includes(day) ? "Sabbath" : sabbathEves.includes(day) ? "Sabbath eve" : null,
+    sabbath: sabbathDays.includes(day)
+      ? "Sabbath"
+      : sabbathEves.includes(day)
+        ? "Sabbath eve"
+        : null,
   };
 }
 
 export function formatMyanmarDate(value: MyanmarDate) {
-  const dayLabel = value.phase === "Full moon" || value.phase === "New moon" ? value.phase : `${value.phase} ${value.fortnightDay}`;
+  const dayLabel =
+    value.phase === "Full moon" || value.phase === "New moon"
+      ? value.phase
+      : `${value.phase} ${value.fortnightDay}`;
   return `${dayLabel} of ${value.month}`;
 }
 
@@ -251,8 +334,24 @@ const lunarMonthNames: Localized<Record<number, string>> = {
 };
 
 const weekdayNames: Localized<string[]> = {
-  mon: ["တ္ၚဲအဒိုတ်", "တ္ၚဲစန်", "တ္ၚဲအင္ၚာ", "တ္ၚဲဗုဒ္ဓဝါ", "တ္ၚဲဗြဴဗတိ", "တ္ၚဲသိုက်", "တ္ၚဲသ္ၚိသဝ်"],
-  my: ["တနင်္ဂနွေ", "တနင်္လာ", "အင်္ဂါ", "ဗုဒ္ဓဟူး", "ကြာသပတေး", "သောကြာ", "စနေ"],
+  mon: [
+    "တ္ၚဲအဒိုတ်",
+    "တ္ၚဲစန်",
+    "တ္ၚဲအင္ၚာ",
+    "တ္ၚဲဗုဒ္ဓဝါ",
+    "တ္ၚဲဗြဴဗတိ",
+    "တ္ၚဲသိုက်",
+    "တ္ၚဲသ္ၚိသဝ်",
+  ],
+  my: [
+    "တနင်္ဂနွေ",
+    "တနင်္လာ",
+    "အင်္ဂါ",
+    "ဗုဒ္ဓဟူး",
+    "ကြာသပတေး",
+    "သောကြာ",
+    "စနေ",
+  ],
 };
 
 /** Compact labels for the calendar grid header. */
@@ -262,32 +361,76 @@ export const weekdayGridLabels: Localized<string[]> = {
 };
 
 const gregorianMonths: Localized<string[]> = {
-  mon: ["ဂျာန်နျူအာရဳ", "ဝှေဝ်ဗျူအာရဳ", "မာတ်ချ်", "ဨပြေယ်လ်", "မေ", "ဂျုန်", "ဂျူလာၚ်", "အဝ်ဂါတ်", "သိတ်ထီဗာ", "အံက်ထဝ်ဗာ", "နဝ်ဝါမ်ဗာ", "ဒီဇြေန်ဗာ"],
-  my: ["ဇန်နဝါရီ", "ဖေဖော်ဝါရီ", "မတ်", "ဧပြီ", "မေ", "ဇွန်", "ဇူလိုင်", "ဩဂုတ်", "စက်တင်ဘာ", "အောက်တိုဘာ", "နိုဝင်ဘာ", "ဒီဇင်ဘာ"],
+  mon: [
+    "ဂျာန်နျူအာရဳ",
+    "ဝှေဝ်ဗျူအာရဳ",
+    "မာတ်ချ်",
+    "ဨပြေယ်လ်",
+    "မေ",
+    "ဂျုန်",
+    "ဂျူလာၚ်",
+    "အဝ်ဂါတ်",
+    "သိတ်ထီဗာ",
+    "အံက်ထဝ်ဗာ",
+    "နဝ်ဝါမ်ဗာ",
+    "ဒီဇြေန်ဗာ",
+  ],
+  my: [
+    "ဇန်နဝါရီ",
+    "ဖေဖော်ဝါရီ",
+    "မတ်",
+    "ဧပြီ",
+    "မေ",
+    "ဇွန်",
+    "ဇူလိုင်",
+    "ဩဂုတ်",
+    "စက်တင်ဘာ",
+    "အောက်တိုဘာ",
+    "နိုဝင်ဘာ",
+    "ဒီဇင်ဘာ",
+  ],
 };
 
 const phaseNames: Localized<Record<MoonPhase, string>> = {
-  mon: { Waxing: "မံက်", "Full moon": "ပေၚ်", Waning: "စွေက်", "New moon": "အိုတ်" },
-  my: { Waxing: "လဆန်း", "Full moon": "ပြည့်", Waning: "လဆုတ်", "New moon": "လကွယ်" },
+  mon: {
+    Waxing: "မံက်",
+    "Full moon": "ပေၚ်",
+    Waning: "စွေက်",
+    "New moon": "အိုတ်",
+  },
+  my: {
+    Waxing: "လဆန်း",
+    "Full moon": "ပြည့်",
+    Waning: "လဆုတ်",
+    "New moon": "လကွယ်",
+  },
 };
 
 const monDigits = ["၀", "၁", "၂", "၃", "၄", "၅", "၆", "၇", "၈", "၉"];
 
 /** Both languages share the Myanmar-block numerals. */
 export function toMonNumerals(value: number | string) {
-  return String(value).replace(/\d/g, (digit) => monDigits[Number(digit)]);
+  return String(value).replace(/\d/g, digit => monDigits[Number(digit)]);
 }
 
 export function getMonWeekday(date: Date, lang: CalendarLang = "mon") {
   return weekdayNames[lang][date.getDay()];
 }
 
-export function getMonGregorianMonth(month: number, lang: CalendarLang = "mon") {
+export function getMonGregorianMonth(
+  month: number,
+  lang: CalendarLang = "mon"
+) {
   return gregorianMonths[lang][month];
 }
 
 export function getMonMonth(value: MyanmarDate, lang: CalendarLang = "mon") {
-  const prefix = value.yearType && value.monthNumber === 4 ? (lang === "my" ? "ဒုတိယ " : "ဒု") : "";
+  const prefix =
+    value.yearType && value.monthNumber === 4
+      ? lang === "my"
+        ? "ဒုတိယ "
+        : "ဒု"
+      : "";
   return `${prefix}${lunarMonthNames[lang][value.monthNumber] ?? value.month}`;
 }
 
@@ -297,7 +440,10 @@ export function getMonPhase(value: MyanmarDate, lang: CalendarLang = "mon") {
 
 export function formatMonDate(value: MyanmarDate, lang: CalendarLang = "mon") {
   const phase = getMonPhase(value, lang);
-  const day = value.phase === "Waxing" || value.phase === "Waning" ? ` ${toMonNumerals(value.fortnightDay)}` : "";
+  const day =
+    value.phase === "Waxing" || value.phase === "Waning"
+      ? ` ${toMonNumerals(value.fortnightDay)}`
+      : "";
   return `${getMonMonth(value, lang)} ${phase}${day}`;
 }
 
@@ -319,17 +465,42 @@ const monCulturalEventRules: MonCulturalEventRule[] = [
   {
     id: "mon-youth-day",
     name: { mon: "တ္ၚဲသၟတ်မန်", my: "မွန်လူငယ်နေ့" },
-    matches: (date) => date.getFullYear() >= 2017 && date.getMonth() === 11 && date.getDate() === 28,
+    matches: date =>
+      date.getFullYear() >= 2017 &&
+      date.getMonth() === 11 &&
+      date.getDate() === 28,
   },
   {
     id: "mon-national-day",
     name: { mon: "တ္ၚဲကောန်ဂကူမန်", my: "မွန်အမျိုးသားနေ့" },
-    matches: (_date, value) => value.year >= 1309 && value.monthNumber === 11 && value.day === 16,
+    matches: (_date, value) =>
+      value.year >= 1309 && value.monthNumber === 11 && value.day === 16,
   },
 ];
 
-export function getMonCulturalEvents(date: Date, value: MyanmarDate, lang: CalendarLang = "mon") {
-  return monCulturalEventRules.filter((event) => event.matches(date, value)).map((event) => event.name[lang]);
+export function getMonCulturalEvents(
+  date: Date,
+  value: MyanmarDate,
+  lang: CalendarLang = "mon"
+) {
+  return monCulturalEventRules
+    .filter(event => event.matches(date, value))
+    .map(event => event.name[lang]);
+}
+
+function getMonCulturalEventEntries(
+  date: Date,
+  value: MyanmarDate,
+  lang: CalendarLang
+): CalendarEvent[] {
+  return monCulturalEventRules
+    .filter(event => event.matches(date, value))
+    .map(event => ({
+      id: event.id,
+      label: event.name[lang],
+      kind: "mon-cultural",
+      source: "calculated",
+    }));
 }
 
 /**
@@ -356,7 +527,10 @@ const holidayNames: Record<string, Localized<string>> = {
   "labour-day": { mon: "တ္ၚဲသၟာကမၠောန်", my: "အလုပ်သမားနေ့" },
   "martyrs-day": { mon: "တ္ၚဲအာဇာနဲ", my: "အာဇာနည်နေ့" },
   christmas: { mon: "တ္ၚဲခရေဿမာတ်", my: "ခရစ္စမတ်နေ့" },
-  "aung-san-birthday": { mon: "တ္ၚဲသၟိၚ်ဗၟာ အံၚ်သာန်ဒှ်မၞိဟ်", my: "ဗိုလ်ချုပ်မွေးနေ့" },
+  "aung-san-birthday": {
+    mon: "တ္ၚဲသၟိၚ်ဗၟာ အံၚ်သာန်ဒှ်မၞိဟ်",
+    my: "ဗိုလ်ချုပ်မွေးနေ့",
+  },
   valentines: { mon: "တ္ၚဲဝုတ်ဗၠာဲ", my: "ချစ်သူများနေ့" },
   "april-fools": { mon: "တ္ၚဲသ္ပပရအ်", my: "April Fools" },
   "earth-day": { mon: "တ္ၚဲဂၠးကဝ်", my: "ကမ္ဘာမြေနေ့" },
@@ -384,7 +558,113 @@ const holidayNames: Record<string, Localized<string>> = {
   "yadanagu-pwe": { mon: "သ္ဘၚ်ရတနာဂူ", my: "ရတနာဂူပွဲ" },
   "mon-revolution": { mon: "တ္ၚဲပၠန်ဂတးမန်", my: "မွန်တော်လှန်ရေးနေ့" },
   "mon-state-day": { mon: "တ္ၚဲဍုၚ်မန်", my: "မွန်ပြည်နယ်နေ့" },
+  "thingyan-holiday": { mon: "တ္ၚဲအတး", my: "မဟာသင်္ကြန် ရုံးပိတ်ရက်" },
+  "union-holiday": { mon: "တ္ၚဲမာတ်ရုင်", my: "ပြည်ထောင်စုနေ့ ရုံးပိတ်ရက်" },
+  "chinese-new-year": { mon: "တ္ၚဲလှာဲသၞာံတရုတ်", my: "တရုတ်နှစ်သစ်ကူးနေ့" },
+  "thadingyut-holiday": { mon: "သ္ဘၚ်ဂိတုဝှ်", my: "သီတင်းကျွတ် ရုံးပိတ်ရက်" },
+  "tazaungdaing-holiday": {
+    mon: "သ္ဘၚ်ပူဇဴပၟတ်ပၞာၚ်",
+    my: "တန်ဆောင်တိုင် ရုံးပိတ်ရက်",
+  },
 };
+
+/**
+ * Date-specific 2026 closures. The base list follows Myanmar's Ministry of
+ * Foreign Affairs, with the Kason date corrected to 30 April from the
+ * Ministry of Information's dated 1388 ME newspaper record. Later announced
+ * bridge holidays around Union Day / Chinese New Year are also represented.
+ */
+const officialPublicHolidays2026: Record<string, string> = {
+  "2026-01-01": "new-year-jan",
+  "2026-01-02": "new-year-jan",
+  "2026-01-04": "independence",
+  "2026-02-12": "union-day",
+  "2026-02-13": "union-holiday",
+  "2026-02-16": "chinese-new-year",
+  "2026-02-17": "chinese-new-year",
+  "2026-03-02": "peasants-day",
+  "2026-03-27": "resistance-day",
+  "2026-04-11": "thingyan-holiday",
+  "2026-04-12": "thingyan-holiday",
+  "2026-04-13": "thingyan-holiday",
+  "2026-04-14": "thingyan-holiday",
+  "2026-04-15": "thingyan-holiday",
+  "2026-04-16": "thingyan-holiday",
+  "2026-04-17": "thingyan-holiday",
+  "2026-04-18": "thingyan-holiday",
+  "2026-04-19": "thingyan-holiday",
+  "2026-04-30": "vesak",
+  "2026-05-01": "labour-day",
+  "2026-07-19": "martyrs-day",
+  "2026-07-29": "dhammacakka-day",
+  "2026-10-25": "thadingyut-holiday",
+  "2026-10-26": "thadingyut-holiday",
+  "2026-10-27": "thadingyut-holiday",
+  "2026-11-23": "tazaungdaing-holiday",
+  "2026-11-24": "tazaungdaing-holiday",
+  "2026-12-04": "national-day",
+  "2026-12-25": "christmas",
+};
+
+/**
+ * Date-specific 2027 closures published by official Myanmar missions on
+ * 26 August 2026. The four bridge holidays are 1 March, 21 May,
+ * 22 November, and 27 December. The Union Government's nine-day Thingyan
+ * closure runs from 12–20 April. Eid-ul-Adha and Deepavali are intentionally
+ * absent until their dates are announced, as required by the notice.
+ */
+const officialPublicHolidays2027: Record<string, string> = {
+  "2027-01-01": "new-year-jan",
+  "2027-01-04": "independence",
+  "2027-01-08": "karen-new-year",
+  "2027-02-07": "chinese-new-year",
+  "2027-02-12": "union-day",
+  "2027-03-01": "office-holiday",
+  "2027-03-02": "peasants-day",
+  "2027-03-22": "tabaung-pwe",
+  "2027-03-27": "resistance-day",
+  "2027-04-12": "thingyan-holiday",
+  "2027-04-13": "thingyan-holiday",
+  "2027-04-14": "thingyan-holiday",
+  "2027-04-15": "thingyan-holiday",
+  "2027-04-16": "thingyan-holiday",
+  "2027-04-17": "thingyan-holiday",
+  "2027-04-18": "thingyan-holiday",
+  "2027-04-19": "thingyan-holiday",
+  "2027-04-20": "thingyan-holiday",
+  "2027-05-01": "labour-day",
+  "2027-05-20": "vesak",
+  "2027-05-21": "office-holiday",
+  "2027-07-18": "dhammacakka-day",
+  "2027-07-19": "martyrs-day",
+  "2027-10-14": "thadingyut-holiday",
+  "2027-10-15": "thadingyut-holiday",
+  "2027-10-16": "thadingyut-holiday",
+  "2027-11-13": "tazaungdaing-holiday",
+  "2027-11-22": "office-holiday",
+  "2027-11-23": "national-day",
+  "2027-12-25": "christmas",
+  "2027-12-27": "office-holiday",
+  "2027-12-28": "karen-new-year",
+};
+
+const officialPublicHolidaySchedules: Record<
+  number,
+  {
+    source: Exclude<CalendarEventSource, "calculated">;
+    dates: Record<string, string>;
+  }
+> = {
+  2026: { source: "official-2026", dates: officialPublicHolidays2026 },
+  2027: { source: "official-2027", dates: officialPublicHolidays2027 },
+};
+
+function dateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function gregorianJDN(date: Date) {
   return westernToJdn(date.getFullYear(), date.getMonth() + 1, date.getDate());
@@ -392,7 +672,8 @@ function gregorianJDN(date: Date) {
 
 function thingyanBounds(totalYear: number) {
   const atatTime = THINGYAN_SOLAR_YEAR * totalYear + THINGYAN_ME_ORIGIN; // Atat time
-  const akyaTime = totalYear >= THIRD_ERA ? atatTime - 2.169918982 : atatTime - 2.1675; // Akya time
+  const akyaTime =
+    totalYear >= THIRD_ERA ? atatTime - 2.169918982 : atatTime - 2.1675; // Akya time
   return { akya: Math.round(akyaTime), atat: Math.round(atatTime) };
 }
 
@@ -417,7 +698,7 @@ function easterJDN(year: number) {
 
 const isFullMoon = (value: MyanmarDate) => value.phase === "Full moon";
 
-export function getMonHolidays(date: Date, value: MyanmarDate, lang: CalendarLang = "mon"): string[] {
+function getHolidayIds(date: Date, value: MyanmarDate): string[] {
   const ids: string[] = [];
   const jdn = gregorianJDN(date);
   const gy = date.getFullYear();
@@ -428,18 +709,28 @@ export function getMonHolidays(date: Date, value: MyanmarDate, lang: CalendarLan
   const md = value.day;
 
   // Thingyan (တ္ၚဲအတး) and Myanmar New Year
-  if ((my + Math.floor(mm / 13)) >= THINGYAN_BEGIN_YEAR) {
+  if (my + Math.floor(mm / 13) >= THINGYAN_BEGIN_YEAR) {
     const { akya, atat } = thingyanBounds(my + Math.floor(mm / 13));
     if (jdn === atat + 1) ids.push("new-year");
     else if (jdn === atat) ids.push("thingyan-atat");
     else if (jdn > akya && jdn < atat) ids.push("thingyan-akyat");
     else if (jdn === akya) ids.push("thingyan-akya");
     else if (jdn === akya - 1) ids.push("thingyan-akyo");
+    const thingyanYear = my + Math.floor(mm / 13);
     if (
-      (my + Math.floor(mm / 13)) >= 1369 &&
-      (my + Math.floor(mm / 13)) < 1379 &&
+      thingyanYear >= 1369 &&
+      thingyanYear < 1379 &&
       (jdn === akya - 2 || (jdn >= atat + 2 && jdn <= akya + 7))
     )
+      ids.push("office-holiday");
+    else if (
+      thingyanYear >= 1384 &&
+      thingyanYear <= 1385 &&
+      jdn >= akya - 5 &&
+      jdn <= akya - 2
+    )
+      ids.push("office-holiday");
+    else if (thingyanYear >= 1386 && jdn >= atat + 2 && jdn <= akya + 7)
       ids.push("office-holiday");
   }
 
@@ -452,8 +743,11 @@ export function getMonHolidays(date: Date, value: MyanmarDate, lang: CalendarLan
   else if (gy >= 1923 && gm === 5 && gd === 1) ids.push("labour-day");
   else if (gy >= 1947 && gm === 7 && gd === 19) ids.push("martyrs-day");
   else if (gy >= 1752 && gm === 12 && gd === 25) ids.push("christmas");
-  else if ((gy === 2017 && gm === 12 && gd === 30) || (gy >= 2017 && gm === 12 && gd === 31)) ids.push("office-holiday");
-  if (gy >= 2017 && gm === 1 && gd === 2) ids.push("office-holiday"); // Day after New Year's (gazetted)
+  else if (
+    (gy === 2017 && gm === 12 && gd === 30) ||
+    (gy >= 2017 && gy <= 2021 && gm === 12 && gd === 31)
+  )
+    ids.push("office-holiday");
 
   if (gy >= 1915 && gm === 2 && gd === 13) ids.push("aung-san-birthday");
   if (gy >= 1969 && gm === 2 && gd === 14) ids.push("valentines");
@@ -470,16 +764,23 @@ export function getMonHolidays(date: Date, value: MyanmarDate, lang: CalendarLan
   else if (gy >= 1876 && jdn === doe - 2) ids.push("good-friday");
 
   // Holidays on the Myanmar calendar (mp===1 → full moon).
-  // Office closures around Thadingyut/Tazaungdaing follow the modern gazette
-  // pattern: the day(s) AFTER the full moon.
-  if (mm === 2 && isFullMoon(value)) ids.push("vesak"); // Vesak
-  else if (mm === 4 && isFullMoon(value)) ids.push("dhammacakka-day"); // Start of Buddhist Lent
-  else if (mm === 7 && isFullMoon(value)) ids.push("lent-end"); // End of Buddhist Lent
-  else if (my >= 1379 && mm === 7 && (md === 16 || md === 17)) ids.push("office-holiday");
-  else if (mm === 8 && isFullMoon(value)) ids.push("tazaungdaing"); // Tazaungdaing
-  else if (my >= 1379 && mm === 8 && md === 16) ids.push("office-holiday");
-  else if (my >= 1282 && mm === 8 && md === 25) ids.push("national-day"); // National Day (Tazaungmone 10th waning)
-  else if (mm === 10 && md === 1) ids.push("karen-new-year"); // Karen New Year
+  // Modern multi-day closures: the day before and after Thadingyut full moon,
+  // and the day before Tazaungdaing full moon (matching current mmcal rules).
+  if (mm === 2 && isFullMoon(value))
+    ids.push("vesak"); // Vesak
+  else if (mm === 4 && isFullMoon(value))
+    ids.push("dhammacakka-day"); // Start of Buddhist Lent
+  else if (mm === 7 && isFullMoon(value))
+    ids.push("lent-end"); // End of Buddhist Lent
+  else if (my >= 1379 && mm === 7 && (md === 14 || md === 16))
+    ids.push("office-holiday");
+  else if (mm === 8 && isFullMoon(value))
+    ids.push("tazaungdaing"); // Tazaungdaing
+  else if (my >= 1379 && mm === 8 && md === 14) ids.push("office-holiday");
+  else if (my >= 1282 && mm === 8 && md === 25)
+    ids.push("national-day"); // National Day (Tazaungmone 10th waning)
+  else if (mm === 10 && md === 1)
+    ids.push("karen-new-year"); // Karen New Year
   else if (mm === 12 && isFullMoon(value)) ids.push("tabaung-pwe"); // Tabaung Pwe
 
   // Mon Revolution Day – the revolt began on the Wagaung full moon of 1310 ME
@@ -493,13 +794,109 @@ export function getMonHolidays(date: Date, value: MyanmarDate, lang: CalendarLan
   }
   if (mm === 3 && isFullMoon(value)) ids.push("mahathamaya-day");
   else if (mm === 6 && isFullMoon(value)) ids.push("garudhamma-day");
-  else if (my >= 1356 && mm === 10 && isFullMoon(value)) ids.push("mothers-day");
-  else if (my >= 1370 && mm === 12 && isFullMoon(value)) ids.push("fathers-day");
+  else if (my >= 1356 && mm === 10 && isFullMoon(value))
+    ids.push("mothers-day");
+  else if (my >= 1370 && mm === 12 && isFullMoon(value))
+    ids.push("fathers-day");
   else if (mm === 5 && isFullMoon(value)) ids.push("metta-day");
   else if (mm === 5 && md === 10) ids.push("taungpyone-pwe");
   else if (mm === 5 && md === 23) ids.push("yadanagu-pwe");
 
-  return ids.map((id) => holidayNames[id][lang]);
+  return Array.from(new Set(ids));
+}
+
+const publicHolidayIds = new Set([
+  "new-year",
+  "new-year-jan",
+  "office-holiday",
+  "independence",
+  "union-day",
+  "peasants-day",
+  "resistance-day",
+  "labour-day",
+  "martyrs-day",
+  "christmas",
+  "vesak",
+  "dhammacakka-day",
+  "lent-end",
+  "tazaungdaing",
+  "national-day",
+  "karen-new-year",
+]);
+
+const religiousEventIds = new Set([
+  "tabaung-pwe",
+  "shan-new-year",
+  "mahathamaya-day",
+  "garudhamma-day",
+  "mothers-day",
+  "fathers-day",
+  "metta-day",
+  "taungpyone-pwe",
+  "yadanagu-pwe",
+]);
+
+const monCultureEventIds = new Set(["mon-revolution", "mon-state-day"]);
+
+/** Rich event data used by the UI to distinguish closures from observances. */
+export function getCalendarEvents(
+  date: Date,
+  value: MyanmarDate,
+  lang: CalendarLang = "mon"
+): CalendarEvent[] {
+  let calculated = getHolidayIds(date, value).map<CalendarEvent>(id => ({
+    id,
+    label: holidayNames[id][lang],
+    kind: publicHolidayIds.has(id)
+      ? "public-holiday"
+      : monCultureEventIds.has(id)
+        ? "mon-cultural"
+        : religiousEventIds.has(id)
+          ? "religious"
+          : "observance",
+    source: "calculated",
+  }));
+
+  const officialSchedule = officialPublicHolidaySchedules[date.getFullYear()];
+  const officialId = officialSchedule?.dates[dateKey(date)];
+  if (officialSchedule && !officialId) {
+    // Once an annual official schedule exists, calculated rules must not add
+    // extra government closures outside that published list.
+    calculated = calculated.filter(event => event.kind !== "public-holiday");
+  }
+  if (officialId) {
+    // A government closure takes precedence over a generic calculated label,
+    // while distinct cultural/religious events on the same day are retained.
+    const genericOfficeIndex = calculated.findIndex(
+      event => event.id === "office-holiday"
+    );
+    if (genericOfficeIndex >= 0 && officialId !== "office-holiday")
+      calculated.splice(genericOfficeIndex, 1);
+    const duplicateIndex = calculated.findIndex(
+      event => event.id === officialId
+    );
+    const officialEvent: CalendarEvent = {
+      id: officialId,
+      label: holidayNames[officialId][lang],
+      kind: "public-holiday",
+      source: officialSchedule.source,
+    };
+    if (duplicateIndex >= 0) calculated[duplicateIndex] = officialEvent;
+    else calculated.unshift(officialEvent);
+  }
+
+  return [...calculated, ...getMonCulturalEventEntries(date, value, lang)];
+}
+
+/** Backwards-compatible flat list for consumers that only need labels. */
+export function getMonHolidays(
+  date: Date,
+  value: MyanmarDate,
+  lang: CalendarLang = "mon"
+): string[] {
+  return getCalendarEvents(date, value, lang)
+    .filter(event => event.kind !== "mon-cultural")
+    .map(event => event.label);
 }
 
 /** Mon names transcribed from the source; Myanmar names from its translation table. */
@@ -555,14 +952,22 @@ function statusMonth(month: number) {
 }
 
 function monthLength(value: MyanmarDate) {
-  return 30 - (value.monthNumber % 2) + (value.monthNumber === 3 ? Math.floor(value.yearType / 2) : 0);
+  return (
+    30 -
+    (value.monthNumber % 2) +
+    (value.monthNumber === 3 ? Math.floor(value.yearType / 2) : 0)
+  );
 }
 
 /**
  * Full daily Mon status catalog calculated from the supplied source's
  * cal_sabbath, cal_yatyaza, cal_pyathada, and cal_astro algorithms.
  */
-export function getMonDailyStatuses(date: Date, value: MyanmarDate, lang: CalendarLang = "mon") {
+export function getMonDailyStatuses(
+  date: Date,
+  value: MyanmarDate,
+  lang: CalendarLang = "mon"
+) {
   const labels: string[] = [];
   const L = statusNames[lang];
   const md = value.day;
@@ -576,8 +981,11 @@ export function getMonDailyStatuses(date: Date, value: MyanmarDate, lang: Calend
 
   const monthModFour = mm % 4;
   const yatyazaWeekdayOne = Math.floor(monthModFour / 2) + 4;
-  const yatyazaWeekdayTwo = ((1 - Math.floor(monthModFour / 2)) + (monthModFour % 2)) * (1 + 2 * (monthModFour % 2));
-  if (wd === yatyazaWeekdayOne || wd === yatyazaWeekdayTwo) labels.push(L.yatyaza);
+  const yatyazaWeekdayTwo =
+    (1 - Math.floor(monthModFour / 2) + (monthModFour % 2)) *
+    (1 + 2 * (monthModFour % 2));
+  if (wd === yatyazaWeekdayOne || wd === yatyazaWeekdayTwo)
+    labels.push(L.yatyaza);
 
   const pyathadaWeekdays = [1, 3, 3, 0, 2, 1, 2];
   if (monthModFour === 0 && wd === 4) labels.push(L.pyathada);
@@ -585,8 +993,9 @@ export function getMonDailyStatuses(date: Date, value: MyanmarDate, lang: Calend
 
   const normalizedMonth = statusMonth(mm);
   const thamanyoMonth = normalizedMonth - 1 - Math.floor(normalizedMonth / 9);
-  const thamanyoWeekday = (thamanyoMonth * 2 - Math.floor(thamanyoMonth / 8)) % 7;
-  if (((wd + 7 - thamanyoWeekday) % 7) <= 1) labels.push(L.thamanyo);
+  const thamanyoWeekday =
+    (thamanyoMonth * 2 - Math.floor(thamanyoMonth / 8)) % 7;
+  if ((wd + 7 - thamanyoWeekday) % 7 <= 1) labels.push(L.thamanyo);
 
   const amyeittasoteWeekdays = [5, 8, 3, 7, 2, 4, 1];
   if (mf === amyeittasoteWeekdays[wd]) labels.push(L.amyeittasote);
@@ -601,16 +1010,29 @@ export function getMonDailyStatuses(date: Date, value: MyanmarDate, lang: Calend
 
   const thamaphyuWeekdays = [1, 2, 6, 6, 5, 6, 7];
   const thamaphyuSecondary = [0, 1, 0, 0, 0, 3, 3];
-  if (mf === thamaphyuWeekdays[wd] || mf === thamaphyuSecondary[wd] || (mf === 4 && wd === 5)) labels.push(L.thamaphyu);
+  if (
+    mf === thamaphyuWeekdays[wd] ||
+    mf === thamaphyuSecondary[wd] ||
+    (mf === 4 && wd === 5)
+  )
+    labels.push(L.thamaphyu);
 
   const nagaporWeekdays = [26, 21, 2, 10, 18, 2, 21];
   const nagaporSecondary = [17, 19, 1, 0, 9, 0, 0];
-  if (md === nagaporWeekdays[wd] || md === nagaporSecondary[wd] || (md === 2 && wd === 1) || ([12, 4, 18].includes(md) && wd === 2)) labels.push(L.nagapor);
+  if (
+    md === nagaporWeekdays[wd] ||
+    md === nagaporSecondary[wd] ||
+    (md === 2 && wd === 1) ||
+    ([12, 4, 18].includes(md) && wd === 2)
+  )
+    labels.push(L.nagapor);
 
-  const yatyotemaMonth = (normalizedMonth % 2 ? normalizedMonth : (normalizedMonth + 9) % 12);
+  const yatyotemaMonth =
+    normalizedMonth % 2 ? normalizedMonth : (normalizedMonth + 9) % 12;
   if (mf === ((yatyotemaMonth + 4) % 12) + 1) labels.push(L.yatyotema);
 
-  if (mf === (Math.floor((normalizedMonth % 12) / 2) + 4) % 6 + 1) labels.push(L.mahayatkyan);
+  if (mf === ((Math.floor((normalizedMonth % 12) / 2) + 4) % 6) + 1)
+    labels.push(L.mahayatkyan);
 
   const shanyatDays = [8, 8, 2, 2, 9, 3, 3, 5, 1, 4, 7, 4];
   if (mf === shanyatDays[normalizedMonth - 1]) labels.push(L.shanyat);
